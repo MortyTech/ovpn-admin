@@ -23,6 +23,7 @@ else
   echo "ca" | /usr/local/bin/easyrsa build-ca nopass
   /usr/local/bin/easyrsa --batch build-server-full server nopass
   /usr/local/bin/easyrsa gen-dh
+  mkdir -p pki
   openvpn --genkey --secret ./pki/ta.key
 fi
 
