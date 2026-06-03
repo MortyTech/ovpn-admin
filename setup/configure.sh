@@ -7,8 +7,8 @@ SERVER_CERT="${EASY_RSA_LOC}/pki/issued/server.crt"
 OVPN_SRV_NET=${OVPN_SERVER_NET:-172.16.100.0}
 OVPN_SRV_MASK=${OVPN_SERVER_MASK:-255.255.255.0}
 
-
-cd $EASY_RSA_LOC
+mkdir -p /etc/openvpn/easyrsa/pki
+#cd $EASY_RSA_LOC
 
 if [ -e "$SERVER_CERT" ]; then
   echo "Found existing certs - reusing"
