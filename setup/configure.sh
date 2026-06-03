@@ -1,34 +1,32 @@
 #!/usr/bin/env bash
 set -ex
 
-EASY_RSA_LOC="/etc/openvpn/easyrsa"
+# مسیر یکتا برای PKI
+EASY_RSA_LOC="/mnt/easyrsa"
+
 SERVER_CERT="${EASY_RSA_LOC}/pki/issued/server.crt"
 
 OVPN_SRV_NET=${OVPN_SERVER_NET:-172.16.100.0}
 OVPN_SRV_MASK=${OVPN_SERVER_MASK:-255.255.255.0}
+
+# اطمینان از اینکه دایرکتوری وجود دارد
+mkdir -p $EASY_RSA_LOC
 
 cd $EASY_RSA_LOC
 
 if [ -e "$SERVER_CERT" ]; then
   echo "Found existing certs - reusing"
 else
-  if [ ${OVPN_ROLE:-"master"} = "slave" ]; then
-    echo "Waiting for initial sync data from master"
-    while [ $(wget -q localhost/api/sync/last/try -O - | wc -m) -lt 1 ]
-    do
-      sleep 5
-    done
-  else
-    echo "Generating new certs"
-    easyrsa --batch init-pki
-    cp -R /usr/share/easy-rsa/* $EASY_RSA_LOC/pki
-    echo "ca" | easyrsa build-ca nopass
-    easyrsa --batch build-server-full server nopass
-    easyrsa gen-dh
-    openvpn --genkey --secret ./pki/ta.key
-  fi
+  echo "Generating new certs"
+  /usr/local/bin/easyrsa --batch init-pki
+  cp -R /usr/share/easy-rsa/* $EASY_RSA_LOC/pki
+  echo "ca" | /usr/local/bin/easyrsa build-ca nopass
+  /usr/local/bin/easyrsa --batch build-server-full server nopass
+  /usr/local/bin/easyrsa gen-dh
+  openvpn --genkey --secret ./pki/ta.key
 fi
-easyrsa gen-crl
+
+/usr/local/bin/easyrsa gen-crl
 
 iptables -t nat -D POSTROUTING -s ${OVPN_SRV_NET}/${OVPN_SRV_MASK} ! -d ${OVPN_SRV_NET}/${OVPN_SRV_MASK} -j MASQUERADE || true
 iptables -t nat -A POSTROUTING -s ${OVPN_SRV_NET}/${OVPN_SRV_MASK} ! -d ${OVPN_SRV_NET}/${OVPN_SRV_MASK} -j MASQUERADE
